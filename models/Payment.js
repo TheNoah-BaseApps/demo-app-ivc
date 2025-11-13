@@ -1,9 +1,6 @@
-// models/Payment.js
 import mongoose from 'mongoose';
 
-const { Schema } = mongoose;
-
-const paymentSchema = new Schema({
+const paymentSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: true,
@@ -12,32 +9,40 @@ const paymentSchema = new Schema({
   paymentMethod: {
     type: String,
     required: true,
-    enum: ['cash', 'bank_transfer', 'credit_card', 'debit_card', 'cheque', 'other']
+    enum: ['cash', 'card', 'bank_transfer', 'check', 'other']
   },
-  date: {
+  paymentDate: {
     type: Date,
     required: true,
     default: Date.now
   },
   description: {
     type: String,
-    required: true
+    required: false
   },
-  customerId: {
-    type: Schema.Types.ObjectId,
+  customer: {
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
   },
-  orderId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Sale',
-    required: true
+  supplier: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  invoice: {
+    type: String,
+    required: false
   },
   status: {
     type: String,
     required: true,
-    enum: ['pending', 'completed', 'failed', 'refunded'],
+    enum: ['pending', 'completed', 'failed', 'cancelled'],
     default: 'pending'
+  },
+  transactionId: {
+    type: String,
+    required: false
   }
 }, {
   timestamps: true

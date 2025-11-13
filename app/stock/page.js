@@ -1,229 +1,310 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Package, 
-  ShoppingCart, 
-  CreditCard, 
-  TrendingUp, 
-  TrendingDown, 
-  BarChart3,
-  Users,
-  DollarSign,
-  AlertTriangle
-} from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Package, DollarSign, ShoppingCart, CreditCard, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export default function StockPage() {
+export default function DashboardPage() {
+  const router = useRouter();
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalSales: 0,
+    totalPurchases: 0,
+    stockValue: 0,
+    pendingPayments: 0,
+    lowStockItems: 0
+  });
+
+  const [salesData, setSalesData] = useState([]);
   const [stockData, setStockData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    const fetchStockData = async () => {
+    // Simulated data fetching
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/stock');
-        if (!response.ok) {
-          throw new Error('Failed to fetch stock data');
-        }
-        const data = await response.json();
-        setStockData(data);
-        setLoading(false);
+        // In a real app, this would be API calls
+        setTimeout(() => {
+          setStats({
+            totalProducts: 142,
+            totalSales: 284500,
+            totalPurchases: 192300,
+            stockValue: 89200,
+            pendingPayments: 12,
+            lowStockItems: 5
+          });
+
+          setSalesData([
+            { month: 'Jan', sales: 4000, purchases: 2400 },
+            { month: 'Feb', sales: 3000, purchases: 1398 },
+            { month: 'Mar', sales: 2000, purchases: 9800 },
+            { month: 'Apr', sales: 2780, purchases: 3908 },
+            { month: 'May', sales: 1890, purchases: 4800 },
+            { month: 'Jun', sales: 2390, purchases: 3800 },
+          ]);
+
+          setStockData([
+            { name: 'Electronics', value: 45 },
+            { name: 'Clothing', value: 25 },
+            { name: 'Home & Garden', value: 15 },
+            { name: 'Books', value: 10 },
+            { name: 'Other', value: 5 },
+          ]);
+
+          setLoading(false);
+        }, 800);
       } catch (error) {
-        console.error('Error fetching stock data:', error);
+        console.error('Error fetching dashboard data:', error);
         setLoading(false);
       }
     };
 
-    fetchStockData();
+    fetchData();
   }, []);
 
-  const handleAddStock = () => {
-    router.push('/stock/add');
-  };
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-  const handleViewDetails = (id) => {
-    router.push(`/stock/${id}`);
-  };
-
-  const getStockStatus = (quantity, minStock) => {
-    if (quantity <= 0) return { status: 'out-of-stock', label: 'Out of Stock', color: 'red' };
-    if (quantity <= minStock) return { status: 'low-stock', label: 'Low Stock', color: 'orange' };
-    return { status: 'in-stock', label: 'In Stock', color: 'green' };
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Stock Management</h1>
-          <p className="text-gray-600 mt-2">
-            Manage current inventory levels and stock quantities
-          </p>
-        </div>
-        <Button onClick={handleAddStock} className="bg-blue-600 hover:bg-blue-700">
-          <Package className="mr-2 h-4 w-4" />
-          Add Stock
-        </Button>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600">Overview of your ERP system</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <Package className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stockData.length}
-            </div>
-            <p className="text-xs text-muted-foreground">Active products</p>
+            <div className="text-2xl font-bold">{stats.totalProducts}</div>
+            <p className="text-xs text-gray-500">+12% from last month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {stockData.filter(item => item.quantity <= item.minStock).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Items requiring attention</p>
+            <div className="text-2xl font-bold">{formatCurrency(stats.totalSales)}</div>
+            <p className="text-xs text-gray-500">+18% from last month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${stockData.reduce((total, item) => total + (item.quantity * item.cost), 0).toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">Current inventory value</p>
+            <div className="text-2xl font-bold">{formatCurrency(stats.totalPurchases)}</div>
+            <p className="text-xs text-gray-500">+5% from last month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Items Below Min</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Stock Value</CardTitle>
+            <CreditCard className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {stockData.filter(item => 
-                item.quantity > 0 && item.quantity <= item.minStock
-              ).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Stock below minimum threshold</p>
+            <div className="text-2xl font-bold">{formatCurrency(stats.stockValue)}</div>
+            <p className="text-xs text-gray-500">+2% from last month</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <BarChart3 className="mr-2 h-5 w-5" />
-            Current Stock Levels
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Quantity
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Min Stock
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {stockData.length > 0 ? (
-                  stockData.map((item) => {
-                    const status = getStockStatus(item.quantity, item.minStock);
-                    return (
-                      <tr key={item._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <Package className="h-5 w-5 text-gray-500" />
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                              <div className="text-sm text-gray-500">SKU: {item.sku}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{item.category || 'N/A'}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{item.quantity}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{item.minStock}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={status.color === 'green' ? 'default' : status.color === 'orange' ? 'destructive' : 'secondary'}>
-                            {status.label}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleViewDetails(item._id)}
-                            className="mr-2"
-                          >
-                            View
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
-                      No stock data available
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Sales & Purchases Trend</CardTitle>
+            <CardDescription>Monthly comparison of sales and purchases</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="sales" fill="#3b82f6" name="Sales" />
+                <Bar dataKey="purchases" fill="#10b981" name="Purchases" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Stock Distribution</CardTitle>
+            <CardDescription>By category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={stockData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {stockData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest actions in your system</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="bg-green-100 p-2 rounded-full">
+                  <ShoppingCart className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-medium">New Sale Created</p>
+                  <p className="text-sm text-gray-500">Samsung Galaxy S23 - $1,299</p>
+                  <p className="text-xs text-gray-400">2 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <Package className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium">Stock Updated</p>
+                  <p className="text-sm text-gray-500">Laptop Case - Quantity increased</p>
+                  <p className="text-xs text-gray-400">15 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="bg-purple-100 p-2 rounded-full">
+                  <CreditCard className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-medium">Payment Received</p>
+                  <p className="text-sm text-gray-500">Order #1001 - $850</p>
+                  <p className="text-xs text-gray-400">1 hour ago</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="bg-yellow-100 p-2 rounded-full">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="font-medium">Low Stock Alert</p>
+                  <p className="text-sm text-gray-500">Wireless Headphones - 3 left</p>
+                  <p className="text-xs text-gray-400">3 hours ago</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Access key modules quickly</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center p-6 h-auto"
+                onClick={() => router.push('/products')}
+              >
+                <Package className="h-8 w-8 mb-2" />
+                <span>Products</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center p-6 h-auto"
+                onClick={() => router.push('/sales')}
+              >
+                <ShoppingCart className="h-8 w-8 mb-2" />
+                <span>Sales</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center p-6 h-auto"
+                onClick={() => router.push('/purchases')}
+              >
+                <TrendingUp className="h-8 w-8 mb-2" />
+                <span>Purchases</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center p-6 h-auto"
+                onClick={() => router.push('/stock')}
+              >
+                <Package className="h-8 w-8 mb-2" />
+                <span>Stock</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center p-6 h-auto"
+                onClick={() => router.push('/payments')}
+              >
+                <CreditCard className="h-8 w-8 mb-2" />
+                <span>Payments</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center p-6 h-auto"
+                onClick={() => router.push('/reports')}
+              >
+                <TrendingDown className="h-8 w-8 mb-2" />
+                <span>Reports</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

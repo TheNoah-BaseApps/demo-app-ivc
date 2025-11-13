@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import User from '@/models/User';
 import { compare } from 'bcryptjs';
-import { generateToken } from '@/lib/jwt';
+import { sign } from 'jsonwebtoken';
+import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
@@ -15,10 +15,7 @@ export async function POST(request) {
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Invalid email or password' 
-        },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
@@ -27,47 +24,32 @@ export async function POST(request) {
     const isPasswordValid = await compare(password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Invalid email or password' 
-        },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
     // Generate JWT token
-    const token = generateToken({
-      id: user._id,
-      email: user.email,
-      name: user.name
-    });
+    const token = sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
     // Return success response with token and user info
     return NextResponse.json({
-      success: true,
       message: 'Login successful',
-      data: {
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-          role: user.role
-        }
-      }
-    }, {
-      status: 200,
-      headers: {
-        'Set-Cookie': `token=${token}; HttpOnly; Path=/; Max-Age=3600`
-      }
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+      },
     });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Internal server error during login' 
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

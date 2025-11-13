@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Cost from '@/models/Cost';
-import { jwtVerify } from 'jose';
-import { verify } from 'bcryptjs';
+import { authenticateToken } from '@/lib/jwt';
 
 export async function GET(request) {
   try {
+    // Authenticate and get user from token
+    const user = await authenticateToken(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Connect to database
     await connectToDatabase();
 
-    const costs = await Cost.find({})
-      .populate('product', 'name')
+    // Fetch all costs with populated product information
+    const costs = await Cost.find()
+      .populate('productId', 'name sku')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({
@@ -19,11 +26,7 @@ export async function GET(request) {
   } catch (error) {
     console.error('Error fetching costs:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to fetch costs',
-        error: error.message 
-      },
+      { error: 'Failed to fetch costs' },
       { status: 500 }
     );
   }
@@ -31,49 +34,51 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    // Authenticate and get user from token
+    const user = await authenticateToken(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Connect to database
     await connectToDatabase();
 
+    // Parse request body
     const data = await request.json();
 
     // Validate required fields
-    if (!data.name || !data.amount || !data.date) {
+    if (!data.productId || !data.amount || !data.type) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Name, amount, and date are required fields'
-        },
+        { error: 'productId, amount, and type are required' },
         { status: 400 }
       );
     }
 
-    // Create new cost
-    const newCost = new Cost({
-      name: data.name,
+    // Create new cost record
+    const cost = new Cost({
+      productId: data.productId,
       amount: data.amount,
-      date: data.date,
-      description: data.description,
-      category: data.category,
-      product: data.product
+      type: data.type,
+      description: data.description || '',
+      createdBy: user.id
     });
 
-    const savedCost = await newCost.save();
+    // Save to database
+    const savedCost = await cost.save();
 
-    // Populate product name if available
+    // Populate the product information
     const populatedCost = await Cost.findById(savedCost._id)
-      .populate('product', 'name');
+      .populate('productId', 'name sku')
+      .populate('createdBy', 'name email');
 
     return NextResponse.json({
       success: true,
       data: populatedCost
-    });
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating cost:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to create cost',
-        error: error.message 
-      },
+      { error: 'Failed to create cost' },
       { status: 500 }
     );
   }

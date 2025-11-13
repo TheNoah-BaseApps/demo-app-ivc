@@ -1,58 +1,86 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, CreditCard, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  ShoppingCart, 
+  Package, 
+  Users,
+  Calendar,
+  FileText
+} from 'lucide-react';
 
-const ReportsPage = () => {
-  const [salesData, setSalesData] = useState([]);
-  const [costData, setCostData] = useState([]);
-  const [stockData, setStockData] = useState([]);
-  const [paymentData, setPaymentData] = useState([]);
+export default function ReportsPage() {
+  const [reports, setReports] = useState({
+    salesVsTargets: [],
+    costVsPrice: [],
+    stockLevels: [],
+    customerBalances: [],
+    profitability: {}
+  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Mock data for demonstration - in a real app, this would fetch from APIs
-        const mockSales = [
-          { month: 'Jan', revenue: 4000, target: 3500 },
-          { month: 'Feb', revenue: 3000, target: 4000 },
-          { month: 'Mar', revenue: 2000, target: 2500 },
-          { month: 'Apr', revenue: 2780, target: 2000 },
-          { month: 'May', revenue: 1890, target: 2500 },
-          { month: 'Jun', revenue: 2390, target: 3000 },
-        ];
-
-        const mockCosts = [
-          { category: 'Materials', amount: 12000 },
-          { category: 'Labor', amount: 8000 },
-          { category: 'Overhead', amount: 5000 },
-          { category: 'Maintenance', amount: 3000 },
-        ];
-
-        const mockStock = [
-          { product: 'Laptop', stock: 15 },
-          { product: 'Mouse', stock: 42 },
-          { product: 'Keyboard', stock: 28 },
-          { product: 'Monitor', stock: 10 },
-          { product: 'Headphones', stock: 35 },
-        ];
-
-        const mockPayments = [
-          { type: 'Sales', amount: 35000 },
-          { type: 'Purchases', amount: 22000 },
-          { type: 'Costs', amount: 28000 },
-        ];
-
-        setSalesData(mockSales);
-        setCostData(mockCosts);
-        setStockData(mockStock);
-        setPaymentData(mockPayments);
+        // In a real application, this would fetch from your API
+        // For demonstration, we're using mock data
+        const mockData = {
+          salesVsTargets: [
+            { month: 'Jan', actual: 4000, target: 2400 },
+            { month: 'Feb', actual: 3000, target: 1398 },
+            { month: 'Mar', actual: 2000, target: 9800 },
+            { month: 'Apr', actual: 2780, target: 3908 },
+            { month: 'May', actual: 1890, target: 4800 },
+            { month: 'Jun', actual: 2390, target: 3800 },
+          ],
+          costVsPrice: [
+            { name: 'Product A', cost: 100, price: 150 },
+            { name: 'Product B', cost: 200, price: 250 },
+            { name: 'Product C', cost: 150, price: 200 },
+            { name: 'Product D', cost: 300, price: 350 },
+          ],
+          stockLevels: [
+            { name: 'Product A', stock: 100 },
+            { name: 'Product B', stock: 50 },
+            { name: 'Product C', stock: 200 },
+            { name: 'Product D', stock: 75 },
+          ],
+          customerBalances: [
+            { customer: 'John Smith', balance: 1500 },
+            { customer: 'Jane Doe', balance: -500 },
+            { customer: 'Bob Johnson', balance: 2000 },
+            { customer: 'Alice Brown', balance: -250 },
+          ],
+          profitability: {
+            totalRevenue: 50000,
+            totalCost: 30000,
+            profit: 20000,
+            profitMargin: 40
+          }
+        };
+        setReports(mockData);
         setLoading(false);
-      } catch (err) {
-        setError('Failed to load reports data');
+      } catch (error) {
+        console.error('Error fetching reports:', error);
         setLoading(false);
       }
     };
@@ -60,22 +88,25 @@ const ReportsPage = () => {
     fetchData();
   }, []);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 bg-red-50 border-l-4 border-red-500">
-        <div className="flex items-center">
-          <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
-          <p className="text-red-700">{error}</p>
+      <div className="p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded"></div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -83,189 +114,175 @@ const ReportsPage = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Reports Dashboard</h1>
-        <p className="text-gray-600 mt-2">Comprehensive business insights and analytics</p>
+        <p className="text-gray-600 mt-2">View comprehensive business analytics and insights</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-full">
-              <DollarSign className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-semibold text-gray-900">$45,230</p>
-              <div className="flex items-center mt-1">
-                <TrendingUp className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-green-600 ml-1">12% increase</span>
+      {/* Profitability Summary */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Profitability Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium text-gray-600">Total Revenue</span>
               </div>
+              <p className="text-2xl font-bold mt-1">{formatCurrency(reports.profitability.totalRevenue)}</p>
+            </div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 text-red-600" />
+                <span className="text-sm font-medium text-gray-600">Total Cost</span>
+              </div>
+              <p className="text-2xl font-bold mt-1">{formatCurrency(reports.profitability.totalCost)}</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium text-gray-600">Profit</span>
+              </div>
+              <p className="text-2xl font-bold mt-1">{formatCurrency(reports.profitability.profit)}</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-purple-600" />
+                <span className="text-sm font-medium text-gray-600">Profit Margin</span>
+              </div>
+              <p className="text-2xl font-bold mt-1">{reports.profitability.profitMargin}%</p>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <ShoppingCart className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Sales</p>
-              <p className="text-2xl font-semibold text-gray-900">1,248</p>
-              <div className="flex items-center mt-1">
-                <TrendingUp className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-green-600 ml-1">8% increase</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-full">
-              <Package className="h-6 w-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Stock Items</p>
-              <p className="text-2xl font-semibold text-gray-900">86</p>
-              <div className="flex items-center mt-1">
-                <TrendingDown className="h-4 w-4 text-red-500" />
-                <span className="text-sm text-red-600 ml-1">3% decrease</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <CreditCard className="h-6 w-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending Payments</p>
-              <p className="text-2xl font-semibold text-gray-900">$5,320</p>
-              <div className="flex items-center mt-1">
-                <TrendingUp className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-green-600 ml-1">5% increase</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Sales vs Targets</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesData}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Sales vs Targets Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Sales Performance vs Targets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={reports.salesVsTargets}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" />
-                <Bar dataKey="target" fill="#10b981" name="Target" />
+                <Bar dataKey="actual" fill="#3b82f6" name="Actual Sales" />
+                <Bar dataKey="target" fill="#10b981" name="Target Sales" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Cost Breakdown</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
+        {/* Cost vs Price Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Cost vs Price Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={reports.costVsPrice}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="cost" fill="#ef4444" name="Cost" />
+                <Bar dataKey="price" fill="#10b981" name="Price" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Stock Levels */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Current Stock Levels
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={costData}
+                  data={reports.stockLevels}
                   cx="50%"
                   cy="50%"
                   labelLine={true}
                   outerRadius={80}
                   fill="#8884d8"
-                  dataKey="amount"
+                  dataKey="stock"
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  {costData.map((entry, index) => (
+                  {reports.stockLevels.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value) => [`${value} units`, 'Stock']} />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
+        {/* Customer Balances */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Customer Balances
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {reports.customerBalances.map((customer, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{customer.customer}</p>
+                    <p className="text-sm text-gray-600">
+                      {customer.balance > 0 ? 'Outstanding' : 'Credit'}
+                    </p>
+                  </div>
+                  <Badge variant={customer.balance > 0 ? "destructive" : "secondary"}>
+                    {formatCurrency(customer.balance)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Stock Levels</h2>
-          <div className="space-y-4">
-            {stockData.map((item, index) => (
-              <div key={index}>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{item.product}</span>
-                  <span className="text-sm font-medium text-gray-700">{item.stock}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${(item.stock / 50) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Summary</h2>
-          <div className="space-y-4">
-            {paymentData.map((item, index) => (
-              <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                <span className="font-medium text-gray-700">{item.type}</span>
-                <span className="font-semibold text-gray-900">${item.amount.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Profitability</h2>
-          <div className="space-y-4">
-            <div className="p-4 bg-green-50 rounded-lg">
-              <div className="flex justify-between">
-                <span className="font-medium text-green-800">Gross Profit</span>
-                <span className="font-semibold text-green-800">$18,230</span>
-              </div>
-              <div className="mt-2 w-full bg-green-200 rounded-full h-2">
-                <div className="bg-green-600 h-2 rounded-full w-3/4"></div>
-              </div>
-            </div>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <div className="flex justify-between">
-                <span className="font-medium text-blue-800">Net Profit</span>
-                <span className="font-semibold text-blue-800">$8,450</span>
-              </div>
-              <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full w-2/3"></div>
-              </div>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <div className="flex justify-between">
-                <span className="font-medium text-purple-800">Profit Margin</span>
-                <span className="font-semibold text-purple-800">18.7%</span>
-              </div>
-              <div className="mt-2 w-full bg-purple-200 rounded-full h-2">
-                <div className="bg-purple-600 h-2 rounded-full w-1/2"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Action Buttons */}
+      <div className="mt-8 flex flex-wrap gap-4">
+        <Button>
+          <FileText className="h-4 w-4 mr-2" />
+          Export Full Report
+        </Button>
+        <Button variant="outline">
+          <Calendar className="h-4 w-4 mr-2" />
+          Generate Custom Report
+        </Button>
+        <Button variant="outline">
+          <TrendingUp className="h-4 w-4 mr-2" />
+          View Detailed Analytics
+        </Button>
       </div>
     </div>
   );
-};
-
-export default ReportsPage;
+}

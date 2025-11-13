@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route';
-import connectToDatabase from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import Sale from '@/models/Sale';
-import Cost from '@/models/Cost';
 import Product from '@/models/Product';
+import Cost from '@/models/Cost';
 import Stock from '@/models/Stock';
 import Payment from '@/models/Payment';
 
@@ -12,17 +10,12 @@ export async function GET(request) {
   try {
     await connectToDatabase();
 
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const reportType = searchParams.get('type');
 
     switch (reportType) {
       case 'sales-targets': {
-        // Get sales data and compare against targets
+        // Get sales data with targets
         const sales = await Sale.aggregate([
           {
             $group: {
@@ -36,181 +29,196 @@ export async function GET(request) {
           { $sort: { _id: 1 } }
         ]);
 
-        // Get targets (simplified - in real app this would come from a targets collection)
         const targets = [
-          { month: '2023-01', target: 10000 },
-          { month: '2023-02', target: 12000 },
-          { month: '2023-03', target: 15000 },
-          { month: '2023-04', target: 18000 },
+          { period: '2024-01', target: 50000 },
+          { period: '2024-02', target: 55000 },
+          { period: '2024-03', target: 60000 },
+          { period: '2024-04', target: 65000 },
+          { period: '2024-05', target: 70000 },
+          { period: '2024-06', target: 75000 },
+          { period: '2024-07', target: 80000 },
+          { period: '2024-08', target: 85000 },
+          { period: '2024-09', target: 90000 },
+          { period: '2024-10', target: 95000 },
+          { period: '2024-11', target: 100000 },
+          { period: '2024-12', target: 105000 }
         ];
 
-        const result = {
-          monthlySales: sales.map(sale => {
-            const target = targets.find(t => t.month === sale._id) || { target: 0 };
-            return {
-              month: sale._id,
-              actual: sale.totalSales,
-              target: target.target,
-              variance: sale.totalSales - target.target,
-              percentage: target.target ? (sale.totalSales / target.target) * 100 : 0
-            };
-          })
-        };
+        // Combine sales and targets
+        const reportData = targets.map(target => {
+          const sale = sales.find(s => s._id === target.period);
+          return {
+            period: target.period,
+            sales: sale ? sale.totalSales : 0,
+            target: target.target,
+            variance: target.target - (sale ? sale.totalSales : 0)
+          };
+        });
 
-        return NextResponse.json(result);
+        return NextResponse.json({
+          report: 'sales-targets',
+          data: reportData
+        });
       }
 
       case 'cost-price': {
-        // Get cost vs price comparison for products
-        const products = await Product.aggregate([
-          {
-            $lookup: {
-              from: 'costs',
-              localField: '_id',
-              foreignField: 'productId',
-              as: 'costs'
-            }
-          },
-          {
-            $project: {
-              name: 1,
-              price: 1,
-              totalCost: { $sum: '$costs.amount' },
-              costCount: { $size: '$costs' }
-            }
-          }
-        ]);
+        // Get cost vs price comparison
+        const products = await Product.find({}, { name: 1, costPrice: 1, sellingPrice: 1 });
 
-        const result = {
-          productComparison: products.map(product => ({
-            productName: product.name,
-            sellingPrice: product.price,
-            totalCost: product.totalCost,
-            margin: product.price - product.totalCost,
-            marginPercentage: product.price ? ((product.price - product.totalCost) / product.price) * 100 : 0
-          }))
-        };
+        const reportData = products.map(product => ({
+          productId: product._id,
+          productName: product.name,
+          costPrice: product.costPrice,
+          sellingPrice: product.sellingPrice,
+          margin: product.sellingPrice - product.costPrice,
+          marginPercentage: ((product.sellingPrice - product.costPrice) / product.sellingPrice) * 100
+        }));
 
-        return NextResponse.json(result);
+        return NextResponse.json({
+          report: 'cost-price',
+          data: reportData
+        });
       }
 
       case 'stock-levels': {
-        // Get current stock levels
+        // Get stock levels report
         const stockLevels = await Stock.aggregate([
+          {
+            $group: {
+              _id: '$product',
+              totalQuantity: { $sum: '$quantity' }
+            }
+          },
           {
             $lookup: {
               from: 'products',
-              localField: 'productId',
+              localField: '_id',
               foreignField: '_id',
-              as: 'product'
+              as: 'productInfo'
             }
           },
           {
-            $unwind: '$product'
-          },
-          {
-            $group: {
-              _id: '$productId',
-              productName: { $first: '$product.name' },
-              currentStock: { $sum: '$quantity' },
-              minValue: { $first: '$minStockLevel' }
-            }
+            $unwind: '$productInfo'
           },
           {
             $project: {
-              _id: 0,
               productId: '$_id',
-              productName: 1,
-              currentStock: 1,
-              minValue: 1,
-              status: {
-                $cond: {
-                  if: { $lt: ['$currentStock', '$minValue'] },
-                  then: 'Low Stock',
-                  else: 'Normal'
-                }
-              }
+              productName: '$productInfo.name',
+              totalQuantity: 1,
+              productCategory: '$productInfo.category'
             }
           }
         ]);
 
-        const result = {
-          stockLevels: stockLevels,
-          lowStockItems: stockLevels.filter(item => item.status === 'Low Stock').length
-        };
+        const lowStockProducts = stockLevels.filter(item => item.totalQuantity < 10);
 
-        return NextResponse.json(result);
+        return NextResponse.json({
+          report: 'stock-levels',
+          data: {
+            stockLevels,
+            lowStockProducts
+          }
+        });
       }
 
       case 'customer-balances': {
-        // Get customer payment balances
-        const payments = await Payment.aggregate([
-          {
-            $group: {
-              _id: '$customerId',
-              totalAmount: { $sum: '$amount' },
-              totalPaid: { $sum: '$amount' },
-              count: { $sum: 1 }
-            }
+        // Get customer balances report
+        const payments = await Payment.find({}, { customer: 1, amount: 1, type: 1 });
+
+        const customerBalances = payments.reduce((acc, payment) => {
+          const key = payment.customer;
+          if (!acc[key]) {
+            acc[key] = { customer: key, balance: 0 };
           }
-        ]);
 
-        const result = {
-          customerBalances: payments.map(payment => ({
-            customerId: payment._id,
-            totalAmount: payment.totalAmount,
-            totalPaid: payment.totalPaid,
-            balance: payment.totalAmount - payment.totalPaid
-          }))
-        };
+          if (payment.type === 'received') {
+            acc[key].balance += payment.amount;
+          } else {
+            acc[key].balance -= payment.amount;
+          }
 
-        return NextResponse.json(result);
+          return acc;
+        }, {});
+
+        const reportData = Object.values(customerBalances);
+
+        return NextResponse.json({
+          report: 'customer-balances',
+          data: reportData
+        });
       }
 
       case 'profitability': {
-        // Calculate overall profitability
-        const salesData = await Sale.aggregate([
+        // Get profitability report
+        const sales = await Sale.find({}, { amount: 1, date: 1 });
+        const costs = await Cost.find({}, { amount: 1, date: 1 });
+
+        const salesTotal = sales.reduce((sum, sale) => sum + sale.amount, 0);
+        const costsTotal = costs.reduce((sum, cost) => sum + cost.amount, 0);
+        const profit = salesTotal - costsTotal;
+        const profitMargin = salesTotal > 0 ? (profit / salesTotal) * 100 : 0;
+
+        const monthlySales = await Sale.aggregate([
           {
             $group: {
-              _id: null,
-              totalSales: { $sum: '$amount' },
-              count: { $sum: 1 }
+              _id: {
+                $dateToString: { format: '%Y-%m', date: '$date' }
+              },
+              total: { $sum: '$amount' }
             }
-          }
+          },
+          { $sort: { _id: 1 } }
         ]);
 
-        const costsData = await Cost.aggregate([
+        const monthlyCosts = await Cost.aggregate([
           {
             $group: {
-              _id: null,
-              totalCosts: { $sum: '$amount' },
-              count: { $sum: 1 }
+              _id: {
+                $dateToString: { format: '%Y-%m', date: '$date' }
+              },
+              total: { $sum: '$amount' }
             }
-          }
+          },
+          { $sort: { _id: 1 } }
         ]);
 
-        const totalSales = salesData[0]?.totalSales || 0;
-        const totalCosts = costsData[0]?.totalCosts || 0;
-        const profit = totalSales - totalCosts;
-        const profitMargin = totalSales ? (profit / totalSales) * 100 : 0;
+        const monthlyProfitability = monthlySales.map(sale => {
+          const cost = monthlyCosts.find(c => c._id === sale._id);
+          const monthlyProfit = sale.total - (cost ? cost.total : 0);
+          const margin = sale.total > 0 ? (monthlyProfit / sale.total) * 100 : 0;
 
-        const result = {
-          financialSummary: {
-            totalSales: totalSales,
-            totalCosts: totalCosts,
-            profit: profit,
-            profitMargin: profitMargin
+          return {
+            period: sale._id,
+            sales: sale.total,
+            costs: cost ? cost.total : 0,
+            profit: monthlyProfit,
+            margin: margin
+          };
+        });
+
+        return NextResponse.json({
+          report: 'profitability',
+          data: {
+            totalSales: salesTotal,
+            totalCosts: costsTotal,
+            profit,
+            profitMargin,
+            monthlyData: monthlyProfitability
           }
-        };
-
-        return NextResponse.json(result);
+        });
       }
 
       default:
-        return NextResponse.json({ error: 'Invalid report type' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Invalid report type' },
+          { status: 400 }
+        );
     }
   } catch (error) {
     console.error('Error generating report:', error);
-    return NextResponse.json({ error: 'Failed to generate report' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to generate report' },
+      { status: 500 }
+    );
   }
 }

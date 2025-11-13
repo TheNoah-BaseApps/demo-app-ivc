@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -10,12 +10,10 @@ import {
   TrendingUp, 
   TrendingDown, 
   DollarSign, 
-  ShoppingCart as CartIcon,
-  Package2,
-  TrendingUp as TrendUp,
-  TrendingDown as TrendDown
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState([]);
@@ -41,20 +39,43 @@ export default function PurchasesPage() {
     fetchPurchases();
   }, []);
 
-  const totalPurchases = purchases.reduce((sum, purchase) => sum + purchase.totalAmount, 0);
+  const totalPurchases = purchases.reduce((sum, purchase) => sum + purchase.total, 0);
   const recentPurchases = purchases.slice(0, 5);
 
   if (loading) {
     return (
       <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Purchases</h1>
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            Add Purchase
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -63,76 +84,73 @@ export default function PurchasesPage() {
   if (error) {
     return (
       <div className="p-6">
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="p-6">
-            <div className="flex items-center text-red-700">
-              <TrendingDown className="h-5 w-5 mr-2" />
-              <span>Error loading purchases: {error}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Purchases</h1>
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            Add Purchase
+          </Button>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <p className="text-red-700">{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Purchases</h1>
-          <p className="text-gray-600 mt-2">Manage and track your purchase transactions</p>
-        </div>
-        <Button className="mt-4 sm:mt-0">
-          <Package className="h-4 w-4 mr-2" />
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Purchases</h1>
+        <Button className="bg-blue-600 hover:bg-blue-700">
           Add Purchase
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalPurchases)}</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+            <div className="text-2xl font-bold">${totalPurchases.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline h-3 w-3 text-green-500" /> 12% from last month
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Purchases</CardTitle>
-            <Package2 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{purchases.length}</div>
-            <p className="text-xs text-muted-foreground">+5 from yesterday</p>
+            <div className="text-2xl font-bold">24</div>
+            <p className="text-xs text-muted-foreground">
+              <ArrowUpRight className="inline h-3 w-3 text-red-500" /> 3 new today
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Purchase</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Suppliers</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {purchases.length ? formatCurrency(totalPurchases / purchases.length) : '$0.00'}
-            </div>
-            <p className="text-xs text-muted-foreground">+12.3% from last quarter</p>
+            <div className="text-2xl font-bold">18</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline h-3 w-3 text-green-500" /> 2 new this month
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Purchases Table */}
-      <Card>
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            Recent Purchases
-          </CardTitle>
+          <CardTitle>Recent Purchases</CardTitle>
+          <CardDescription>Latest purchase transactions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -142,25 +160,29 @@ export default function PurchasesPage() {
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Supplier</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Date</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Items</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Amount</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Total</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {recentPurchases.map((purchase) => (
                   <tr key={purchase._id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">{purchase.supplier?.name || 'N/A'}</td>
-                    <td className="py-3 px-4">{new Date(purchase.date).toLocaleDateString()}</td>
+                    <td className="py-3 px-4">{purchase.supplier || 'Unknown Supplier'}</td>
                     <td className="py-3 px-4">
-                      <Badge variant="secondary">{purchase.items?.length || 0} items</Badge>
+                      {new Date(purchase.date).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4 font-medium">{formatCurrency(purchase.totalAmount)}</td>
+                    <td className="py-3 px-4">{purchase.items.length}</td>
+                    <td className="py-3 px-4 font-medium">
+                      ${purchase.total.toLocaleString()}
+                    </td>
                     <td className="py-3 px-4">
                       <Badge 
-                        variant={purchase.status === 'completed' ? 'default' : 'secondary'}
-                        className="text-xs"
+                        variant={
+                          purchase.status === 'completed' ? 'default' : 
+                          purchase.status === 'pending' ? 'secondary' : 'destructive'
+                        }
                       >
-                        {purchase.status}
+                        {purchase.status.charAt(0).toUpperCase() + purchase.status.slice(1)}
                       </Badge>
                     </td>
                   </tr>
@@ -168,23 +190,41 @@ export default function PurchasesPage() {
               </tbody>
             </table>
           </div>
-          {purchases.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <p>No purchases recorded yet</p>
-              <p className="text-sm mt-2">Add your first purchase to get started</p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Add Purchase Button */}
-      <div className="flex justify-end">
-        <Button>
-          <Package className="h-4 w-4 mr-2" />
-          Record New Purchase
-        </Button>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Purchase History</CardTitle>
+          <CardDescription>Complete purchase transaction history</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {purchases.slice(0, 10).map((purchase) => (
+              <div key={purchase._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div>
+                  <h3 className="font-medium">{purchase.supplier || 'Unknown Supplier'}</h3>
+                  <p className="text-sm text-gray-500">
+                    {new Date(purchase.date).toLocaleDateString()} • 
+                    {purchase.items.length} items
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">${purchase.total.toLocaleString()}</p>
+                  <Badge 
+                    variant={
+                      purchase.status === 'completed' ? 'default' : 
+                      purchase.status === 'pending' ? 'secondary' : 'destructive'
+                    }
+                  >
+                    {purchase.status.charAt(0).toUpperCase() + purchase.status.slice(1)}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,237 +1,219 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, CreditCard, AlertCircle, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { 
+  Database, 
+  TrendingUp, 
+  ShoppingCart, 
+  CreditCard, 
+  Package, 
+  Users,
+  BarChart3,
+  DollarSign,
+  AlertTriangle
+} from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-
-export default function DashboardPage() {
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    totalSales: 0,
-    totalPurchases: 0,
-    totalStock: 0,
-    totalPayments: 0
-  });
-  const [salesData, setSalesData] = useState([]);
-  const [topProducts, setTopProducts] = useState([]);
+export default function CostsPage() {
+  const [costs, setCosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulate API call to fetch dashboard data
-    const fetchData = async () => {
+    const fetchCosts = async () => {
       try {
-        // In a real app, these would be API calls
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        setStats({
-          totalProducts: 128,
-          totalSales: 24500,
-          totalPurchases: 18900,
-          totalStock: 562,
-          totalPayments: 32400
-        });
-
-        setSalesData([
-          { month: 'Jan', sales: 4000, purchases: 2400 },
-          { month: 'Feb', sales: 3000, purchases: 1398 },
-          { month: 'Mar', sales: 2000, purchases: 9800 },
-          { month: 'Apr', sales: 2780, purchases: 3908 },
-          { month: 'May', sales: 1890, purchases: 4800 },
-          { month: 'Jun', sales: 2390, purchases: 3800 },
-        ]);
-
-        setTopProducts([
-          { name: 'Product A', value: 400 },
-          { name: 'Product B', value: 300 },
-          { name: 'Product C', value: 300 },
-          { name: 'Product D', value: 200 },
-          { name: 'Product E', value: 100 },
-        ]);
-
+        const response = await fetch('/api/costs');
+        if (!response.ok) {
+          throw new Error('Failed to fetch costs');
+        }
+        const data = await response.json();
+        setCosts(data);
         setLoading(false);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+      } catch (err) {
+        setError(err.message);
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchCosts();
   }, []);
-
-  const StatCard = ({ title, value, icon: Icon, change, trend }) => (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {change && (
-            <div className="flex items-center mt-2">
-              {trend === 'up' ? (
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-red-500" />
-              )}
-              <span className={`ml-1 text-sm font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                {change}
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="p-3 bg-blue-100 rounded-full">
-          <Icon className="h-6 w-6 text-blue-600" />
-        </div>
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-80 bg-gray-200 rounded"></div>
-            <div className="h-80 bg-gray-200 rounded"></div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center">
+          <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+          <h3 className="text-red-800 font-medium">Error</h3>
+        </div>
+        <p className="text-red-600 mt-1">{error}</p>
+      </div>
+    );
+  }
+
+  const totalCosts = costs.reduce((sum, cost) => sum + cost.amount, 0);
+  const recentCosts = costs.slice(0, 5);
+
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome to your ERP system dashboard</p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Costs Management</h1>
+          <p className="text-gray-600 mt-1">Track and manage all business expenses</p>
+        </div>
+        <Button className="bg-blue-600 hover:bg-blue-700">
+          Add New Cost
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <StatCard
-          title="Total Products"
-          value={stats.totalProducts}
-          icon={Package}
-          change="+12%"
-          trend="up"
-        />
-        <StatCard
-          title="Total Sales"
-          value={`$${stats.totalSales.toLocaleString()}`}
-          icon={DollarSign}
-          change="+8%"
-          trend="up"
-        />
-        <StatCard
-          title="Total Purchases"
-          value={`$${stats.totalPurchases.toLocaleString()}`}
-          icon={ShoppingCart}
-          change="+5%"
-          trend="up"
-        />
-        <StatCard
-          title="Total Stock"
-          value={stats.totalStock}
-          icon={Package}
-          change="+3%"
-          trend="up"
-        />
-        <StatCard
-          title="Total Payments"
-          value={`$${stats.totalPayments.toLocaleString()}`}
-          icon={CreditCard}
-          change="+2%"
-          trend="up"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Costs</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalCosts)}</div>
+            <p className="text-xs text-gray-500 mt-1">All time</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Costs</CardTitle>
+            <Database className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{costs.length}</div>
+            <p className="text-xs text-gray-500 mt-1">Current records</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Cost</CardTitle>
+            <BarChart3 className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {costs.length ? formatCurrency(totalCosts / costs.length) : formatCurrency(0)}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Per record</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Sales vs Purchases</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="sales" fill="#3b82f6" name="Sales" />
-                <Bar dataKey="purchases" fill="#10b981" name="Purchases" />
-              </BarChart>
-            </ResponsiveContainer>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <ShoppingCart className="h-5 w-5 mr-2" />
+            Recent Costs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentCosts.map((cost) => (
+                  <tr key={cost._id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {cost.description}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {cost.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {formatCurrency(cost.amount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(cost.date).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+          {recentCosts.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No costs recorded yet
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Top Selling Products</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={topProducts}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={true}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {topProducts.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
-          <Button variant="outline">View All</Button>
-        </div>
-        <div className="space-y-4">
-          <div className="flex items-start p-4 border rounded-lg">
-            <div className="p-2 bg-green-100 rounded-full mr-4">
-              <ShoppingCart className="h-5 w-5 text-green-600" />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <TrendingUp className="h-5 w-5 mr-2" />
+            Cost Categories
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Materials</h3>
+                <span className="text-sm text-gray-500">32%</span>
+              </div>
+              <div className="mt-2 bg-gray-200 rounded-full h-2">
+                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '32%' }}></div>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="font-medium">New sale recorded</p>
-              <p className="text-sm text-gray-600">Product A sold to Customer X</p>
-              <p className="text-xs text-gray-500 mt-1">2 minutes ago</p>
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Labor</h3>
+                <span className="text-sm text-gray-500">28%</span>
+              </div>
+              <div className="mt-2 bg-gray-200 rounded-full h-2">
+                <div className="bg-green-600 h-2 rounded-full" style={{ width: '28%' }}></div>
+              </div>
             </div>
-          </div>
-          <div className="flex items-start p-4 border rounded-lg">
-            <div className="p-2 bg-blue-100 rounded-full mr-4">
-              <Package className="h-5 w-5 text-blue-600" />
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Overhead</h3>
+                <span className="text-sm text-gray-500">20%</span>
+              </div>
+              <div className="mt-2 bg-gray-200 rounded-full h-2">
+                <div className="bg-purple-600 h-2 rounded-full" style={{ width: '20%' }}></div>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="font-medium">Stock updated</p>
-              <p className="text-sm text-gray-600">Product B stock increased by 50 units</p>
-              <p className="text-xs text-gray-500 mt-1">15 minutes ago</p>
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Miscellaneous</h3>
+                <span className="text-sm text-gray-500">20%</span>
+              </div>
+              <div className="mt-2 bg-gray-200 rounded-full h-2">
+                <div className="bg-yellow-600 h-2 rounded-full" style={{ width: '20%' }}></div>
+              </div>
             </div>
           </div>
-          <div className="flex items-start p-4 border rounded-lg">
-            <div className="p-2 bg-purple-100 rounded-full mr-4">
-              <CreditCard className="h-5 w-5 text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium">Payment received</p>
-              <p className="text-sm text-gray-600">Payment from Customer Y for order #12345</p>
-              <p className="text-xs text-gray-500 mt-1">1 hour ago</p>
-            </div>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

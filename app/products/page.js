@@ -4,201 +4,240 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PieChart, TrendingUp, ShoppingCart, Package, DollarSign, Users } from 'lucide-react';
-import axios from 'axios';
+import { 
+  Package, 
+  TrendingUp, 
+  ShoppingCart, 
+  DollarSign, 
+  Users, 
+  BarChart3,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react';
+import { format } from 'date-fns';
 
-export default function HomePage() {
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    totalSales: 0,
-    totalPurchases: 0,
-    totalStock: 0,
-    totalRevenue: 0,
-    totalCosts: 0
-  });
-  const [recentActivity, setRecentActivity] = useState([]);
+// Mock data for demo purposes
+const mockProducts = [
+  { id: '1', name: 'Wireless Headphones', category: 'Electronics', price: 89.99, inStock: 45 },
+  { id: '2', name: 'Office Chair', category: 'Furniture', price: 199.99, inStock: 12 },
+  { id: '3', name: 'Laptop Stand', category: 'Accessories', price: 29.99, inStock: 87 },
+  { id: '4', name: 'Desk Lamp', category: 'Furniture', price: 39.99, inStock: 23 },
+];
+
+const mockSales = [
+  { id: '1', product: 'Wireless Headphones', customer: 'John Smith', amount: 89.99, date: '2023-06-15' },
+  { id: '2', product: 'Office Chair', customer: 'Jane Doe', amount: 199.99, date: '2023-06-14' },
+  { id: '3', product: 'Laptop Stand', customer: 'Robert Johnson', amount: 29.99, date: '2023-06-13' },
+];
+
+const mockStock = [
+  { id: '1', product: 'Wireless Headphones', current: 45, min: 20 },
+  { id: '2', product: 'Office Chair', current: 12, min: 15 },
+  { id: '3', product: 'Laptop Stand', current: 87, min: 10 },
+];
+
+export default function ProductsPage() {
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    // In a real app, this would fetch from the API
+    const fetchProducts = async () => {
       try {
-        const [productsRes, salesRes, purchasesRes, stockRes, revenueRes, costsRes] = await Promise.all([
-          axios.get('/api/products'),
-          axios.get('/api/sales'),
-          axios.get('/api/purchases'),
-          axios.get('/api/stock'),
-          axios.get('/api/reports/sales-targets'),
-          axios.get('/api/reports/cost-price')
-        ]);
-
-        const productCount = productsRes.data.data.length;
-        const salesCount = salesRes.data.data.length;
-        const purchasesCount = purchasesRes.data.data.length;
-        const stockValue = stockRes.data.data.reduce((acc, item) => acc + (item.quantity * item.costPrice), 0);
-        const revenue = revenueRes.data.data.reduce((acc, item) => acc + item.totalAmount, 0);
-        const costs = costsRes.data.data.reduce((acc, item) => acc + item.amount, 0);
-
-        setStats({
-          totalProducts: productCount,
-          totalSales: salesCount,
-          totalPurchases: purchasesCount,
-          totalStock: stockValue,
-          totalRevenue: revenue,
-          totalCosts: costs
-        });
-
-        // Mock recent activity
-        setRecentActivity([
-          { id: 1, type: 'sale', description: 'Sale #1001 recorded', time: '2 hours ago' },
-          { id: 2, type: 'purchase', description: 'Purchase #2001 completed', time: '5 hours ago' },
-          { id: 3, type: 'product', description: 'New product added: Widget Pro', time: '1 day ago' },
-          { id: 4, type: 'stock', description: 'Stock level updated for Item #5001', time: '2 days ago' }
-        ]);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setProducts(mockProducts);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load products');
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchProducts();
   }, []);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
+  const handleAddProduct = () => {
+    // In a real app, this would open a modal to add a product
+    console.log('Add new product');
   };
 
   if (loading) {
     return (
       <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card className="max-w-2xl mx-auto">
+          <CardContent className="pt-6">
+            <div className="flex items-center text-red-600">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              <span>{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome to ERP Demo - Your business management center</p>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+          <p className="text-gray-600">Manage your product inventory</p>
+        </div>
+        <Button onClick={handleAddProduct} className="bg-blue-600 hover:bg-blue-700">
+          <Package className="w-4 h-4 mr-2" />
+          Add Product
+        </Button>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts}</div>
+            <div className="text-2xl font-bold">{products.length}</div>
             <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalSales}</div>
-            <p className="text-xs text-muted-foreground">+18.3% from last month</p>
+            <div className="text-2xl font-bold">
+              {products.filter(p => p.inStock > 0).length}
+            </div>
+            <p className="text-xs text-muted-foreground">+5 from yesterday</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPurchases}</div>
-            <p className="text-xs text-muted-foreground">+12.7% from last month</p>
+            <div className="text-2xl font-bold">
+              {products.filter(p => p.inStock < 20).length}
+            </div>
+            <p className="text-xs text-muted-foreground">Items below minimum</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Stock Value</CardTitle>
+            <CardTitle className="text-sm font-medium">Avg. Price</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalStock)}</div>
-            <p className="text-xs text-muted-foreground">+8.2% from last month</p>
+            <div className="text-2xl font-bold">
+              ${Math.round(products.reduce((sum, p) => sum + p.price, 0) / products.length * 100) / 100}
+            </div>
+            <p className="text-xs text-muted-foreground">Based on all products</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest updates from your business</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3">
-                    <div className="mt-1">
-                      {activity.type === 'sale' && <ShoppingCart className="h-5 w-5 text-green-500" />}
-                      {activity.type === 'purchase' && <Package className="h-5 w-5 text-blue-500" />}
-                      {activity.type === 'product' && <Package className="h-5 w-5 text-purple-500" />}
-                      {activity.type === 'stock' && <TrendingUp className="h-5 w-5 text-orange-500" />}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{activity.description}</p>
-                      <p className="text-xs text-gray-500">{activity.time}</p>
-                    </div>
-                  </div>
+      {/* Products Grid */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Product Inventory</CardTitle>
+          <CardDescription>Current inventory levels and details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Product
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Price
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Stock
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {products.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{product.category}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ${product.price.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{product.inStock}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge 
+                        variant={product.inStock > 20 ? "default" : "destructive"}
+                        className="text-xs"
+                      >
+                        {product.inStock > 20 ? 'In Stock' : 'Low Stock'}
+                      </Badge>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Quick Actions */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common operations you can perform</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full justify-start" variant="outline">
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Record New Sale
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <Package className="mr-2 h-4 w-4" />
-                Record New Purchase
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <Package className="mr-2 h-4 w-4" />
-                Add New Product
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                View Reports
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Recent Sales */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Sales</CardTitle>
+          <CardDescription>Latest product sales activity</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {mockSales.map((sale) => (
+              <div key={sale.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">{sale.product}</h4>
+                  <p className="text-sm text-gray-500">Customer: {sale.customer}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">${sale.amount.toFixed(2)}</p>
+                  <p className="text-sm text-gray-500">
+                    {format(new Date(sale.date), 'MMM d, yyyy')}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

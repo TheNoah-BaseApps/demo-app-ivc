@@ -4,30 +4,27 @@ import User from '@/models/User';
 import { hash } from 'bcryptjs';
 import { z } from 'zod';
 
-// Validation schema for registration data
+// Define validation schema
 const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters long'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  role: z.enum(['admin', 'user'], 'Invalid role'),
+  password: z.string().min(6, 'Password must be at least 6 characters long'),
 });
 
 export async function POST(request) {
   try {
+    // Parse and validate request body
+    const body = await request.json();
+    const { name, email, password } = registerSchema.parse(body);
+
     // Connect to database
     await connectToDatabase();
-
-    // Parse and validate request body
-    const requestData = await request.json();
-    const validatedData = registerSchema.parse(requestData);
-
-    const { name, email, password, role } = validatedData;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: 'User already exists with this email' },
         { status: 409 }
       );
     }
@@ -40,7 +37,6 @@ export async function POST(request) {
       name,
       email,
       password: hashedPassword,
-      role,
     });
 
     // Save user to database
@@ -53,11 +49,8 @@ export async function POST(request) {
         id: savedUser._id,
         name: savedUser.name,
         email: savedUser.email,
-        role: savedUser.role,
-        createdAt: savedUser.createdAt,
       },
-    }, { status: 201 });
-
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -67,9 +60,8 @@ export async function POST(request) {
     }
 
     console.error('Registration error:', error);
-
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to register user' },
       { status: 500 }
     );
   }

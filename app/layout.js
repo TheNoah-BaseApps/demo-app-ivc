@@ -1,35 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import './globals.css';
+import { Inter } from 'next/font/google';
 import Sidebar from '@/components/Sidebar';
-import '@/app/globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata = {
+  title: 'ERP Demo',
+  description: 'A lightweight ERP application with core modules for Products, Costs, Sales, Purchases, Stock, and Payments.',
+};
 
 export default function RootLayout({ children }) {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return (
-      <html lang="en">
-        <body className="bg-gray-50">
-          <div className="flex min-h-screen">
-            <div className="w-64 bg-gray-800"></div>
-            <main className="flex-1"></main>
-          </div>
-        </body>
-      </html>
-    );
-  }
-
   return (
     <html lang="en">
-      <body className="bg-gray-50">
-        <div className="flex min-h-screen">
+      <body className={inter.className}>
+        <div className="flex h-screen bg-gray-50">
           <Sidebar />
-          <main className="flex-1 p-6">
+          <main className="flex-1 overflow-auto p-6">
             {children}
           </main>
         </div>

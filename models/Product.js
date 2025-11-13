@@ -1,17 +1,13 @@
-import mongoose from 'mongoose';
+'use server';
 
-const productSchema = new mongoose.Schema({
+import mongoose, { Schema } from 'mongoose';
+
+const ProductSchema = new Schema({
   name: {
     type: String,
     required: true,
     trim: true,
-    maxlength: 100
-  },
-  description: {
-    type: String,
-    default: '',
-    trim: true,
-    maxlength: 500
+    maxlength: 255
   },
   sku: {
     type: String,
@@ -20,25 +16,52 @@ const productSchema = new mongoose.Schema({
     trim: true,
     maxlength: 50
   },
+  description: {
+    type: String,
+    trim: true
+  },
   category: {
     type: String,
-    required: true,
     trim: true,
-    maxlength: 50
+    maxlength: 100
   },
-  price: {
+  costPrice: {
     type: Number,
     required: true,
     min: 0
   },
-  cost: {
+  sellingPrice: {
     type: Number,
     required: true,
+    min: 0
+  },
+  stockLevel: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  reorderLevel: {
+    type: Number,
+    default: 10,
     min: 0
   },
   isActive: {
     type: Boolean,
     default: true
+  },
+  supplier: {
+    type: String,
+    trim: true,
+    maxlength: 255
+  },
+  weight: {
+    type: Number,
+    min: 0
+  },
+  dimensions: {
+    length: { type: Number, min: 0 },
+    width: { type: Number, min: 0 },
+    height: { type: Number, min: 0 }
   },
   createdAt: {
     type: Date,
@@ -50,15 +73,16 @@ const productSchema = new mongoose.Schema({
   }
 });
 
-// Index for faster queries
-productSchema.index({ name: 1 });
-productSchema.index({ sku: 1 });
-productSchema.index({ category: 1 });
-
 // Middleware to update updatedAt field
-productSchema.pre('save', function(next) {
+ProductSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
 
-export default mongoose.models.Product || mongoose.model('Product', productSchema);
+// Index for better query performance
+ProductSchema.index({ name: 1 });
+ProductSchema.index({ sku: 1 });
+ProductSchema.index({ category: 1 });
+ProductSchema.index({ isActive: 1 });
+
+export const Product = mongoose.models.Product || mongoose.model('Product', ProductSchema);

@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import Sale from '@/models/Sale';
 import Product from '@/models/Product';
-import Stock from '@/models/Stock';
-import { validateSale } from '@/lib/validation';
+import { verifyToken } from '@/lib/jwt';
 
 export async function GET(request) {
   try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'Authorization token required' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
@@ -15,11 +24,12 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
 
     const sales = await Sale.find()
-      .populate('customerId', 'name email')
-      .populate('productId', 'name sku')
-      .sort({ createdAt: -1 })
+      .populate('productId', 'name')
+      .populate('customerId', 'name')
+      .sort({ date: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     const total = await Sale.countDocuments();
 
@@ -29,87 +39,66 @@ export async function GET(request) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit)
       }
     });
   } catch (error) {
     console.error('Error fetching sales:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch sales' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch sales' }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'Authorization token required' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
     await connectToDatabase();
-
     const data = await request.json();
-    const validationResult = validateSale(data);
 
-    if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: validationResult.error.errors },
-        { status: 400 }
-      );
-    }
-
-    const { customerId, productId, quantity, unitPrice, discount = 0, notes = '' } = data;
-
-    // Check if product exists
-    const product = await Product.findById(productId);
+    const product = await Product.findById(data.productId);
     if (!product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    // Check stock availability
-    const stock = await Stock.findOne({ productId });
-    if (!stock || stock.quantity < quantity) {
-      return NextResponse.json(
-        { error: 'Insufficient stock available' },
-        { status: 400 }
-      );
+    if (product.stock < data.quantity) {
+      return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 });
     }
 
-    // Calculate total amount
-    const subtotal = unitPrice * quantity;
-    const discountAmount = subtotal * (discount / 100);
-    const totalAmount = subtotal - discountAmount;
-
-    // Create sale
     const sale = new Sale({
-      customerId,
-      productId,
-      quantity,
-      unitPrice,
-      discount,
-      subtotal,
-      discountAmount,
-      totalAmount,
-      notes
+      ...data,
+      totalAmount: product.price * data.quantity,
+      createdBy: decoded.userId
     });
 
     const savedSale = await sale.save();
 
-    // Update stock
-    stock.quantity -= quantity;
-    await stock.save();
+    // Update product stock
+    product.stock -= data.quantity;
+    await product.save();
 
-    // Populate the response
-    const populatedSale = await Sale.findById(savedSale._id)
-      .populate('customerId', 'name email')
-      .populate('productId', 'name sku');
-
-    return NextResponse.json(populatedSale, { status: 201 });
+    return NextResponse.json({
+      message: 'Sale created successfully',
+      sale: {
+        ...savedSale.toObject(),
+        product: {
+          name: product.name,
+          price: product.price
+        }
+      }
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating sale:', error);
-    return NextResponse.json(
-      { error: 'Failed to create sale' },
-      { status: 500 }
-    );
+    if (error.name === 'ValidationError') {
+      return NextResponse.json({ error: 'Validation failed', details: Object.values(error.errors) }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Failed to create sale' }, { status: 500 });
   }
 }

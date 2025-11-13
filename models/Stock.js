@@ -1,19 +1,24 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose from 'mongoose';
 
-const stockSchema = new Schema({
-  product: {
+const stockSchema = new mongoose.Schema({
+  productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
     required: true
+  },
+  unitCost: {
+    type: Number,
+    required: true,
+    min: 0
   },
   quantity: {
     type: Number,
     required: true,
     min: 0
   },
-  reserved: {
+  totalValue: {
     type: Number,
-    default: 0,
+    required: true,
     min: 0
   },
   location: {
@@ -24,19 +29,8 @@ const stockSchema = new Schema({
     type: Date,
     default: Date.now
   }
-});
-
-// Calculate available stock (quantity - reserved)
-stockSchema.virtual('available').get(function() {
-  return this.quantity - this.reserved;
-});
-
-// Ensure reserved quantity doesn't exceed total quantity
-stockSchema.pre('save', function(next) {
-  if (this.reserved > this.quantity) {
-    return next(new Error('Reserved quantity cannot exceed total quantity'));
-  }
-  next();
+}, {
+  timestamps: true
 });
 
 export default mongoose.models.Stock || mongoose.model('Stock', stockSchema);

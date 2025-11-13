@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { connectToDatabase } from '@/lib/mongodb';
 import Purchase from '@/models/Purchase';
 import Product from '@/models/Product';
-import { verifyAuth } from '@/lib/jwt';
+import Stock from '@/models/Stock';
+import { validatePurchaseData } from '@/lib/validation';
 
 export async function GET(request) {
   try {
-    const user = await verifyAuth(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
@@ -19,8 +16,8 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
 
     const purchases = await Purchase.find()
-      .populate('productId', 'name')
-      .populate('supplierId', 'name')
+      .populate('productId', 'name code')
+      .populate('supplierId', 'name email')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -28,6 +25,7 @@ export async function GET(request) {
     const total = await Purchase.countDocuments();
 
     return NextResponse.json({
+      success: true,
       data: purchases,
       pagination: {
         page,
@@ -38,38 +36,70 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('Error fetching purchases:', error);
-    return NextResponse.json({ error: 'Failed to fetch purchases' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch purchases' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request) {
   try {
-    const user = await verifyAuth(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await connectToDatabase();
 
     const data = await request.json();
 
+    const validation = await validatePurchaseData(data);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, message: 'Validation failed', errors: validation.errors },
+        { status: 400 }
+      );
+    }
+
+    // Check if product exists
+    const product = await Product.findById(data.productId);
+    if (!product) {
+      return NextResponse.json(
+        { success: false, message: 'Product not found' },
+        { status: 404 }
+      );
+    }
+
+    // Create purchase
     const purchase = new Purchase({
       ...data,
-      createdBy: user.id
+      totalAmount: data.quantity * data.unitPrice,
+      createdBy: data.createdBy || null
     });
 
     const savedPurchase = await purchase.save();
 
-    // Update product stock
-    const product = await Product.findById(data.productId);
-    if (product) {
-      product.stock += data.quantity;
-      await product.save();
-    }
+    // Update stock
+    const stockUpdate = await Stock.findOneAndUpdate(
+      { productId: data.productId },
+      { 
+        $inc: { currentStock: data.quantity },
+        $push: { stockTransactions: {
+          type: 'purchase',
+          quantity: data.quantity,
+          unitPrice: data.unitPrice,
+          reference: savedPurchase._id,
+          date: new Date()
+        }}
+      },
+      { new: true, upsert: true }
+    );
 
-    return NextResponse.json(savedPurchase, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      data: savedPurchase
+    });
   } catch (error) {
     console.error('Error creating purchase:', error);
-    return NextResponse.json({ error: 'Failed to create purchase' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: 'Failed to create purchase' },
+      { status: 500 }
+    );
   }
 }

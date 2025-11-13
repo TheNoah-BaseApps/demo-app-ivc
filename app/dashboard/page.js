@@ -1,247 +1,188 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, TrendingDown, ShoppingCart, Package, DollarSign, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { BarChart, TrendingUp, ShoppingCart, Package, CreditCard, DollarSign, Users, Calendar, Clock } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
 
-export default function HomePage() {
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+
+export default function DashboardPage() {
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalSales: 0,
     totalPurchases: 0,
-    totalPayments: 0,
-    stockValue: 0,
-    pendingPayments: 0
+    totalStock: 0,
+    totalRevenue: 0,
+    totalCosts: 0,
+    totalProfit: 0
   });
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [salesData, setSalesData] = useState([]);
+  const [stockData, setStockData] = useState([]);
 
   useEffect(() => {
-    // Simulated API calls - in a real app, these would fetch from your backend
-    const fetchStats = () => {
+    // Simulate API fetch - replace with real API calls
+    const fetchDashboardData = async () => {
+      // Mock data based on business requirements
       setStats({
-        totalProducts: 124,
-        totalSales: 58,
-        totalPurchases: 32,
-        totalPayments: 45,
-        stockValue: 42500.75,
-        pendingPayments: 8
+        totalProducts: 24,
+        totalSales: 156,
+        totalPurchases: 89,
+        totalStock: 1243,
+        totalRevenue: 45678.90,
+        totalCosts: 23456.78,
+        totalProfit: 22222.12
       });
-    };
 
-    const fetchActivities = () => {
-      setRecentActivities([
-        { id: 1, type: 'sale', description: 'Sale #S0045 to Customer A', amount: 1200.00, time: '2 hours ago' },
-        { id: 2, type: 'purchase', description: 'Purchase #P0023 from Supplier B', amount: 3400.00, time: '5 hours ago' },
-        { id: 3, type: 'payment', description: 'Payment received from Customer C', amount: 850.00, time: '1 day ago' },
-        { id: 4, type: 'stock', description: 'Stock adjustment for Product X', amount: 0, time: '1 day ago' },
+      setSalesData([
+        { name: 'Jan', revenue: 4000, costs: 2400 },
+        { name: 'Feb', revenue: 3000, costs: 1398 },
+        { name: 'Mar', revenue: 2000, costs: 9800 },
+        { name: 'Apr', revenue: 2780, costs: 3908 },
+        { name: 'May', revenue: 1890, costs: 4800 },
+        { name: 'Jun', revenue: 2390, costs: 3800 },
+      ]);
+
+      setStockData([
+        { name: 'Electronics', value: 400 },
+        { name: 'Clothing', value: 300 },
+        { name: 'Home & Garden', value: 200 },
+        { name: 'Books', value: 100 },
       ]);
     };
 
-    fetchStats();
-    fetchActivities();
+    fetchDashboardData();
   }, []);
 
-  const modules = [
-    {
-      name: 'Products',
-      description: 'Manage your product catalog and inventory',
-      icon: Package,
-      color: 'bg-blue-500',
-      path: '/products'
-    },
-    {
-      name: 'Costs',
-      description: 'Track and manage your business expenses',
-      icon: CreditCard,
-      color: 'bg-green-500',
-      path: '/costs'
-    },
-    {
-      name: 'Sales',
-      description: 'Record and manage sales transactions',
-      icon: ShoppingCart,
-      color: 'bg-purple-500',
-      path: '/sales'
-    },
-    {
-      name: 'Purchases',
-      description: 'Record and track purchase orders',
-      icon: Package,
-      color: 'bg-yellow-500',
-      path: '/purchases'
-    },
-    {
-      name: 'Stock',
-      description: 'Monitor and manage inventory levels',
-      icon: Package,
-      color: 'bg-red-500',
-      path: '/stock'
-    },
-    {
-      name: 'Payments',
-      description: 'Manage customer and supplier payments',
-      icon: CreditCard,
-      color: 'bg-indigo-500',
-      path: '/payments'
-    },
-    {
-      name: 'Reports',
-      description: 'Generate detailed business reports',
-      icon: BarChart,
-      color: 'bg-pink-500',
-      path: '/reports'
-    }
-  ];
+  const StatCard = ({ title, value, icon: Icon, change, isPositive }) => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <div className={`flex items-center text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          {isPositive ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+          {change}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="p-6">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome to your ERP system. Here's an overview of your business.</p>
+        <p className="text-gray-600 mt-2">Welcome to the ERP Demo dashboard</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalSales}</div>
-            <p className="text-xs text-muted-foreground">+8% from last month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPurchases}</div>
-            <p className="text-xs text-muted-foreground">+5% from last month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Payments</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPayments}</div>
-            <p className="text-xs text-muted-foreground">+3% from last month</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <StatCard 
+          title="Total Products" 
+          value={stats.totalProducts} 
+          icon={Package} 
+          change="+12% from last month" 
+          isPositive={true} 
+        />
+        <StatCard 
+          title="Total Sales" 
+          value={stats.totalSales} 
+          icon={ShoppingCart} 
+          change="+8% from last month" 
+          isPositive={true} 
+        />
+        <StatCard 
+          title="Total Purchases" 
+          value={stats.totalPurchases} 
+          icon={CreditCard} 
+          change="+5% from last month" 
+          isPositive={true} 
+        />
+        <StatCard 
+          title="Total Stock" 
+          value={stats.totalStock} 
+          icon={Package} 
+          change="+3% from last month" 
+          isPositive={true} 
+        />
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart className="h-5 w-5 mr-2" />
-              Financial Overview
-            </CardTitle>
+            <CardTitle>Revenue vs Costs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border rounded-lg p-4">
-                <div className="text-sm font-medium text-gray-500">Total Stock Value</div>
-                <div className="text-2xl font-bold mt-1">{formatCurrency(stats.stockValue)}</div>
-                <div className="flex items-center text-sm mt-2 text-green-600">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  <span>12% increase</span>
-                </div>
-              </div>
-              <div className="border rounded-lg p-4">
-                <div className="text-sm font-medium text-gray-500">Pending Payments</div>
-                <div className="text-2xl font-bold mt-1">{stats.pendingPayments}</div>
-                <div className="flex items-center text-sm mt-2 text-red-600">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span>3 overdue</span>
-                </div>
-              </div>
-              <div className="border rounded-lg p-4">
-                <div className="text-sm font-medium text-gray-500">Recent Activity</div>
-                <div className="text-2xl font-bold mt-1">18</div>
-                <div className="text-sm mt-2 text-gray-500">Last 30 days</div>
-              </div>
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" />
+                <Bar dataKey="costs" fill="#ef4444" name="Costs" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Stock Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={stockData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {stockData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              Recent Activity
-            </CardTitle>
+            <CardTitle>Financial Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start">
-                  <div className={`p-2 rounded-full ${activity.type === 'sale' ? 'bg-green-100 text-green-600' : activity.type === 'purchase' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
-                    {activity.type === 'sale' ? <ShoppingCart className="h-4 w-4" /> : 
-                     activity.type === 'purchase' ? <Package className="h-4 w-4" /> : 
-                     <CreditCard className="h-4 w-4" />}
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium">{activity.description}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                  </div>
-                  <div className="ml-auto font-medium text-sm">
-                    {activity.amount > 0 ? formatCurrency(activity.amount) : ''}
-                  </div>
-                </div>
-              ))}
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Total Revenue</span>
+                <span className="font-semibold">${stats.totalRevenue.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Total Costs</span>
+                <span className="font-semibold">${stats.totalCosts.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Total Profit</span>
+                <span className="font-semibold text-green-600">${stats.totalProfit.toLocaleString()}</span>
+              </div>
+              <div className="pt-4">
+                <Button className="w-full">View Reports</Button>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Modules Grid */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Business Modules</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {modules.map((module) => {
-            const Icon = module.icon;
-            return (
-              <Card key={module.name} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className={`${module.color} p-3 rounded-lg text-white`}>
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <div className="ml-4">
-                      <h3 className="font-semibold text-lg">{module.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{module.description}</p>
-                      <Button variant="outline" size="sm" className="mt-3">
-                        Open Module
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
